@@ -1,0 +1,30 @@
+#
+# Copyright (C) 2012-2020 Intel Corporation.
+# SPDX-License-Identifier: MIT
+#
+
+##############################################################
+#
+# Roots setup
+#
+##############################################################
+
+TOOL_ROOTS := pintool
+
+##############################################################
+#
+# Build rules
+#
+##############################################################
+
+# This section contains the build rules for all binaries that have special build rules.
+# See makefile.default.rules for the default build rules.
+
+# Build the intermediate object file.
+$(OBJDIR)pintool.$(OBJ_SUFFIX): pintool.cpp
+	$(CXX) $(TOOL_CXXFLAGS) $(COMP_OBJ)$@ $<
+
+# Build the tool as a dll (shared object).
+$(OBJDIR)pintool.$(PINTOOL_SUFFIX): $(OBJDIR)pintool.$(OBJ_SUFFIX)
+	$(LINKER) $(TOOL_LDFLAGS) $(LINK_EXE)$@ $< $(TOOL_LPATHS) $(TOOL_LIBS)
+
