@@ -38,8 +38,10 @@ VOID Trace(TRACE trace, VOID* v){
 }
 
 void print_instruction_map(FILE* fp){
-    for(auto instruction : instruction_map)
-        fprintf(fp,"0x%lx:%lu\n", instruction.second->address, instruction.second->count);
+    for(auto pair : instruction_map){
+        Instruction* instruction = pair.second;
+        fprintf(fp,"0x%lx:%lu\n", instruction->address, instruction->count);
+    }
 }
 
 // called when the application exits
