@@ -38,7 +38,7 @@ VOID Trace(TRACE trace, VOID* v){
         for(INS ins = BBL_InsHead(bbl); INS_Valid(ins); ins = INS_Next(ins)){
             ADDRINT address = INS_Address(ins);
             std::string mnemonic = INS_Mnemonic(ins);
-            std::string function = RTN_FindNameByAddress(address);
+            std::string function = PIN_UndecorateSymbolName(RTN_FindNameByAddress(address), UNDECORATION_COMPLETE);
             Instruction* instruction = new Instruction(address, mnemonic, function);
             instruction_map.insert(std::make_pair(address, instruction));
             INS_InsertCall(ins, IPOINT_BEFORE, AFUNPTR(increment_count), IARG_ADDRINT, address, IARG_END);
