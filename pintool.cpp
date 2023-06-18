@@ -10,9 +10,10 @@ KNOB<std::string> KnobOutputFile(KNOB_MODE_WRITEONCE, "pintool", "o", "", "outpu
 
 struct Instruction{
     ADDRINT address;
+    std::string mnemonic;
     UINT64 count;
 
-    Instruction(ADDRINT address): address(address){
+    Instruction(ADDRINT address, std::string mnemonic): address(address), mnemonic(mnemonic){
         count = 0;
     }
 };
@@ -30,7 +31,8 @@ VOID Trace(TRACE trace, VOID* v){
         // iterate over instructions in the basic block
         for(INS ins = BBL_InsHead(bbl); INS_Valid(ins); ins = INS_Next(ins)){
             ADDRINT address = INS_Address(ins);
-            Instruction* instruction = new Instruction(address);
+            std::string mnemonic = INS_Mnemonic(ins);
+            Instruction* instruction = new Instruction(address, mnemonic);
             instruction_map.insert(std::make_pair(address, instruction));
             INS_InsertCall(ins, IPOINT_BEFORE, AFUNPTR(increment_count), IARG_ADDRINT, address, IARG_END);
         }
@@ -40,7 +42,7 @@ VOID Trace(TRACE trace, VOID* v){
 void print_instruction_map(FILE* fp){
     for(auto pair : instruction_map){
         Instruction* instruction = pair.second;
-        fprintf(fp,"0x%lx:%lu\n", instruction->address, instruction->count);
+        fprintf(fp,"0x%lx:%s:%lu\n", instruction->address, instruction->mnemonic.c_str(), instruction->count);
     }
 }
 
