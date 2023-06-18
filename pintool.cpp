@@ -12,7 +12,9 @@ struct Instruction{
     ADDRINT address;
     UINT64 count;
 
-    Instruction(ADDRINT address, UINT64 count = 0): address(address), count(count){}
+    Instruction(ADDRINT address): address(address){
+        count = 0;
+    }
 };
 
 std::map<ADDRINT, Instruction*> instruction_map;
