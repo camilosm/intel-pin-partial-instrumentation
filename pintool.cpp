@@ -28,7 +28,8 @@ VOID Trace(TRACE trace, VOID* v){
         // iterate over instructions in the basic block
         for(INS ins = BBL_InsHead(bbl); INS_Valid(ins); ins = INS_Next(ins)){
             ADDRINT address = INS_Address(ins);
-            instruction_map.insert(std::make_pair(address, new Instruction(address)));
+            Instruction* instruction = new Instruction(address);
+            instruction_map.insert(std::make_pair(address, instruction));
             INS_InsertCall(ins, IPOINT_BEFORE, AFUNPTR(increment_count), IARG_ADDRINT, address, IARG_END);
         }
     }
