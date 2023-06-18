@@ -12,19 +12,13 @@ struct Instruction{
     ADDRINT address;
     UINT64 count;
 
-    Instruction(ADDRINT address, UINT64 count = 1): address(address), count(count){}
+    Instruction(ADDRINT address, UINT64 count = 0): address(address), count(count){}
 };
 
 std::map<ADDRINT, Instruction*> instruction_map;
 
 VOID increment_count(ADDRINT address){
-    Instruction* instruction = instruction_map[address];
-    if(!instruction){
-        instruction = new Instruction(address);
-        instruction_map[address] = instruction;
-    }
-    else
-        instruction->count++;
+    instruction_map[address]->count++;
 }
 
 // process program traces
@@ -34,6 +28,7 @@ VOID Trace(TRACE trace, VOID* v){
         // iterate over instructions in the basic block
         for(INS ins = BBL_InsHead(bbl); INS_Valid(ins); ins = INS_Next(ins)){
             ADDRINT address = INS_Address(ins);
+            instruction_map.insert(std::make_pair(address, new Instruction(address)));
             INS_InsertCall(ins, IPOINT_BEFORE, AFUNPTR(increment_count), IARG_ADDRINT, address, IARG_END);
         }
     }
