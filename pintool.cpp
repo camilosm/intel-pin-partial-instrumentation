@@ -11,9 +11,10 @@ KNOB<std::string> KnobOutputFile(KNOB_MODE_WRITEONCE, "pintool", "o", "", "outpu
 struct Instruction{
     ADDRINT address;
     std::string mnemonic;
+    std::string function;
     UINT64 count;
 
-    Instruction(ADDRINT address, std::string mnemonic): address(address), mnemonic(mnemonic){
+    Instruction(ADDRINT address, std::string mnemonic, std::string function): address(address), mnemonic(mnemonic), function(function){
         count = 0;
     }
 };
@@ -32,7 +33,8 @@ VOID Trace(TRACE trace, VOID* v){
         for(INS ins = BBL_InsHead(bbl); INS_Valid(ins); ins = INS_Next(ins)){
             ADDRINT address = INS_Address(ins);
             std::string mnemonic = INS_Mnemonic(ins);
-            Instruction* instruction = new Instruction(address, mnemonic);
+            std::string function = RTN_FindNameByAddress(address);
+            Instruction* instruction = new Instruction(address, mnemonic, function);
             instruction_map.insert(std::make_pair(address, instruction));
             INS_InsertCall(ins, IPOINT_BEFORE, AFUNPTR(increment_count), IARG_ADDRINT, address, IARG_END);
         }
@@ -42,7 +44,7 @@ VOID Trace(TRACE trace, VOID* v){
 void print_instruction_map(FILE* fp){
     for(auto pair : instruction_map){
         Instruction* instruction = pair.second;
-        fprintf(fp,"0x%lx:%s:%lu\n", instruction->address, instruction->mnemonic.c_str(), instruction->count);
+        fprintf(fp,"0x%lx:%s:%s:%lu\n", instruction->address, instruction->mnemonic.c_str(), instruction->function.c_str(), instruction->count);
     }
 }
 
@@ -75,6 +77,9 @@ int main(int argc, char * argv[]){
 
     // register exiting function
     PIN_AddFiniFunction(Fini, fp);
+
+    // needed get more information about associated function names
+    PIN_InitSymbols();
 
     // start the program, never returns
     PIN_StartProgram();
