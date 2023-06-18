@@ -5,6 +5,9 @@
 #include <map>
 
 #include "pin.H"
+#include "instlib.H"
+
+INSTLIB::FILTER filter;
 
 KNOB<std::string> KnobOutputFile(KNOB_MODE_WRITEONCE, "pintool", "o", "", "output file name");
 
@@ -27,6 +30,8 @@ VOID increment_count(ADDRINT address){
 
 // process program traces
 VOID Trace(TRACE trace, VOID* v){
+    if(!filter.SelectTrace(trace))
+        return;
     // iterate over basic blocks in the trace
     for(BBL bbl = TRACE_BblHead(trace); BBL_Valid(bbl); bbl = BBL_Next(bbl)){
         // iterate over instructions in the basic block
@@ -80,6 +85,8 @@ int main(int argc, char * argv[]){
 
     // needed get more information about associated function names
     PIN_InitSymbols();
+
+    filter.Activate();
 
     // start the program, never returns
     PIN_StartProgram();
