@@ -3,6 +3,7 @@
 #include <fstream>
 #include <string>
 #include <map>
+#include <list>
 
 #include "pin.H"
 #include "instlib.H"
@@ -10,6 +11,7 @@
 INSTLIB::FILTER filter;
 
 KNOB<std::string> KnobOutputFile(KNOB_MODE_WRITEONCE, "pintool", "o", "", "output file name");
+KNOB<bool> KnobOutputGroup(KNOB_MODE_WRITEONCE, "pintool", "g", "0", "group by function");
 
 struct Instruction{
     ADDRINT address;
@@ -46,17 +48,34 @@ VOID Trace(TRACE trace, VOID* v){
     }
 }
 
-void print_instruction_map(FILE* fp){
-    for(auto pair : instruction_map){
-        Instruction* instruction = pair.second;
-        fprintf(fp,"0x%lx:%s:%s:%lu\n", instruction->address, instruction->mnemonic.c_str(), instruction->function.c_str(), instruction->count);
+void print_instruction_map(FILE* fp, bool group){
+    if(!group){
+        for(auto pair : instruction_map){
+            Instruction* instruction = pair.second;
+            fprintf(fp,"0x%lx:%s:%s:%lu\n", instruction->address, instruction->mnemonic.c_str(), instruction->function.c_str(), instruction->count);
+        }
+    }
+    else{
+        std::map<std::string, std::list<Instruction*>> instructions_grouped;
+        for(auto pair : instruction_map){
+            Instruction* instruction = pair.second;
+            std::string function = instruction->function;
+            instructions_grouped[function].push_back(instruction);
+        }
+        for(auto pair : instructions_grouped){
+            std::string function = pair.first;
+            std::list<Instruction*> instruction_list = pair.second;
+            fprintf(fp,"Function %s, %lu:\n", function.c_str(), instruction_list.size());
+            for(auto instruction : instruction_list)
+                fprintf(fp,"0x%lx:%s:%lu\n", instruction->address, instruction->mnemonic.c_str(), instruction->count);
+        }
     }
 }
 
 // called when the application exits
 VOID Fini(INT32 code, VOID *v){
     FILE *fp = (FILE*)v;
-    print_instruction_map(fp);
+    print_instruction_map(fp, KnobOutputGroup.Value());
     if(fp != stdout)
         fclose(fp);
 }
