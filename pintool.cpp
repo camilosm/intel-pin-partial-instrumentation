@@ -2,6 +2,7 @@
 
 #include <fstream>
 #include <string>
+#include <set>
 #include <map>
 #include <list>
 #include <chrono>
@@ -16,6 +17,12 @@ INSTLIB::FILTER filter;
 
 KNOB<std::string> KnobOutputFile(KNOB_MODE_WRITEONCE, "pintool", "o", "", "output file name");
 KNOB<bool> KnobOutputGroup(KNOB_MODE_WRITEONCE, "pintool", "g", "0", "group by function");
+KNOB<ADDRINT> KnobAddressSet(KNOB_MODE_APPEND, "pintool", "a", "0", "instructions address set");
+KNOB<bool> KnobFilterRange(KNOB_MODE_WRITEONCE, "pintool", "r", "0", "enable range of addresses filter");
+KNOB<ADDRINT> KnobAddressStart(KNOB_MODE_WRITEONCE, "pintool", "s", "0", "range filter start address");
+KNOB<ADDRINT> KnobAddressEnd(KNOB_MODE_WRITEONCE, "pintool", "e", "0", "range filter end address");
+
+std::set<ADDRINT> filter_addresses_set;
 
 std::map<ADDRINT, Instruction*> instruction_map;
 
@@ -43,6 +50,13 @@ VOID Trace(TRACE trace, VOID* v){
         // iterate over instructions in the basic block
         for(INS ins = BBL_InsHead(bbl); INS_Valid(ins); ins = INS_Next(ins)){
             ADDRINT address = INS_Address(ins);
+            bool set, in_set, range, in_range;
+            set = KnobAddressSet.SetByUser();
+            in_set = filter_addresses_set.count(address)>0;
+            range = KnobFilterRange.Value();
+            in_range = (address >= KnobAddressStart.Value() && address <= KnobAddressEnd.Value());
+            if((set && !in_set) && (range && !in_range))
+                continue;
             std::string mnemonic = INS_Mnemonic(ins);
             std::string function = PIN_UndecorateSymbolName(RTN_FindNameByAddress(address), UNDECORATION_COMPLETE);
             Instruction* instruction = new Instruction(address, mnemonic, function);
@@ -109,6 +123,10 @@ int main(int argc, char * argv[]){
         fp = stdout;
     else
         fp = fopen(KnobOutputFile.Value().c_str(), "w");
+
+    // populate set of instruction addresses to instrument
+    for(size_t i = 0; i<KnobAddressSet.NumberOfValues(); i++)
+        filter_addresses_set.insert(KnobAddressSet.Value(i));
 
     // register exiting function
     PIN_AddFiniFunction(Fini, fp);
