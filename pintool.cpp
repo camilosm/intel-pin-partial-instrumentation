@@ -10,23 +10,12 @@
 #include "pin.H"
 #include "instlib.H"
 
+#include "instruction.h"
+
 INSTLIB::FILTER filter;
 
 KNOB<std::string> KnobOutputFile(KNOB_MODE_WRITEONCE, "pintool", "o", "", "output file name");
 KNOB<bool> KnobOutputGroup(KNOB_MODE_WRITEONCE, "pintool", "g", "0", "group by function");
-
-struct Instruction{
-    ADDRINT address;
-    std::string mnemonic;
-    std::string function;
-    std::chrono::duration<double> time;
-    UINT64 count;
-
-    Instruction(ADDRINT address, std::string mnemonic, std::string function): address(address), mnemonic(mnemonic), function(function){
-        time = std::chrono::duration<double>(0);
-        count = 0;
-    }
-};
 
 std::map<ADDRINT, Instruction*> instruction_map;
 
