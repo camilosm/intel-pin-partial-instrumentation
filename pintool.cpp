@@ -55,7 +55,7 @@ VOID Trace(TRACE trace, VOID* v){
             in_set = filter_addresses_set.count(address)>0;
             range = KnobFilterRange.Value();
             in_range = (address >= KnobAddressStart.Value() && address <= KnobAddressEnd.Value());
-            if((set && !in_set) && (range && !in_range))
+            if((set && !in_set && !range && !in_range) || (!set && !in_set && range && !in_range) || (set && !in_set && range && !in_range))
                 continue;
             std::string mnemonic = INS_Mnemonic(ins);
             std::string function = PIN_UndecorateSymbolName(RTN_FindNameByAddress(address), UNDECORATION_COMPLETE);
