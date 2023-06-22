@@ -11,7 +11,6 @@
 #include "instlib.H"
 
 #include "instruction.h"
-#include "function.h"
 
 INSTLIB::FILTER filter;
 
@@ -26,7 +25,7 @@ KNOB<ADDRINT> KnobAddressEnd(KNOB_MODE_WRITEONCE, "pintool", "e", "0", "range fi
 std::set<ADDRINT> filter_addresses_set;
 
 std::map<ADDRINT, Instruction*> instruction_map;
-std::map<std::string, Function*> function_map;
+std::map<std::string, UINT64> function_map;
 
 VOID instruction_count(ADDRINT address){
     instruction_map[address]->count++;
@@ -66,23 +65,12 @@ VOID TraceInstructions(TRACE trace, VOID* v){
 }
 
 // process program traces by functions
-VOID TraceFunctions(TRACE trace, VOID* v){
-    if(!filter.SelectTrace(trace))
-        return;
+VOID Routine(RTN rtn, VOID* v){
     // get block head instruction
-    INS ins = BBL_InsHead(TRACE_BblHead(trace));
-    ADDRINT address = INS_Address(ins);
-    bool set, in_set, range, in_range;
-    set = KnobAddressSet.SetByUser();
-    in_set = filter_addresses_set.count(address)>0;
-    range = KnobFilterRange.Value();
-    in_range = (address >= KnobAddressStart.Value() && address <= KnobAddressEnd.Value());
-    if((set && !in_set && !range && !in_range) || (!set && !in_set && range && !in_range) || (set && !in_set && range && !in_range))
-        return;
-    std::string name = PIN_UndecorateSymbolName(RTN_FindNameByAddress(address), UNDECORATION_COMPLETE);
-    Function* function = new Function(address, name);
-    function_map.insert(std::make_pair(name, function));
-    INS_InsertCall(ins, IPOINT_BEFORE, AFUNPTR(function_count), IARG_PTR, &(function->count), IARG_END);
+    std::string name = PIN_UndecorateSymbolName(RTN_Name(rtn), UNDECORATION_COMPLETE);
+    function_map.insert(std::make_pair(name, 0));
+    UINT64* pointer = &function_map[name];
+    INS_InsertCall(ins, IPOINT_BEFORE, AFUNPTR(function_count), IARG_PTR, pointer, IARG_END);
 }
 
 void print_instruction_map(FILE* fp, bool group){
@@ -139,7 +127,7 @@ int main(int argc, char * argv[]){
 
     // register trace processing function
     if(KnobInstrumentFunction.Value())
-        TRACE_AddInstrumentFunction(TraceFunctions, 0);
+        RTN_AddInstrumentFunction(Routine, 0);
     else
         TRACE_AddInstrumentFunction(TraceInstructions, 0);
 
