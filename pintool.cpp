@@ -36,7 +36,7 @@ VOID instruction_count(ADDRINT address){
 // }
 
 VOID function_count(UINT64 *counter){
-    (*counter)++;
+    (*counter)+=2;
 }
 
 // process program traces by instructions
