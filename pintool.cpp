@@ -99,8 +99,7 @@ void print_instruction_map(FILE* fp, bool group){
 
 void print_function_map(FILE* fp){
     for(auto pair : function_map){
-        Function* function = pair.second;
-        fprintf(fp,"0x%lx:%s:%lu\n", function->address, function->name.c_str(), function->count);
+        fprintf(fp,"0x%s:%lu\n", pair.first.c_str(), pair.second);
     }
 }
 
