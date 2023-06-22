@@ -5,6 +5,6 @@ struct Function{
     UINT64 count;
 
     Function(std::string name): name(name){
-        count = 0;
+        count = 1;
     }
 };
