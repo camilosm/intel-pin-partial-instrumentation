@@ -37,7 +37,7 @@ VOID function_count(ADDRINT address){
 }
 
 // process program traces by instructions
-VOID TraceInstructions(TRACE trace, VOID* v){
+VOID Trace(TRACE trace, VOID* v){
     if(!filter.SelectTrace(trace))
         return;
     // iterate over basic blocks in the trace
@@ -62,12 +62,11 @@ VOID TraceInstructions(TRACE trace, VOID* v){
 }
 
 // process program traces by functions
-VOID TraceFunctions(TRACE trace, VOID* v){
-    if(!filter.SelectTrace(trace))
+VOID Routine(RTN rtn, VOID* v){
+    if(!filter.SelectRtn(rtn))
         return;
     // get block head instruction
-    INS ins = BBL_InsHead(TRACE_BblHead(trace));
-    ADDRINT address = INS_Address(ins);
+    ADDRINT address = RTN_Address(rtn);
     bool set, in_set, range, in_range;
     set = KnobAddressSet.SetByUser();
     in_set = filter_addresses_set.count(address)>0;
@@ -75,10 +74,11 @@ VOID TraceFunctions(TRACE trace, VOID* v){
     in_range = (address >= KnobAddressStart.Value() && address <= KnobAddressEnd.Value());
     if((set && !in_set && !range && !in_range) || (!set && !in_set && range && !in_range) || (set && !in_set && range && !in_range))
         return;
-    std::string name = PIN_UndecorateSymbolName(RTN_FindNameByAddress(address), UNDECORATION_COMPLETE);
+    std::string name = PIN_UndecorateSymbolName(RTN_Name(rtn), UNDECORATION_COMPLETE);
     Function* function = new Function(address, name);
     function_map.insert(std::make_pair(address, function));
-    INS_InsertCall(ins, IPOINT_BEFORE, AFUNPTR(function_count), IARG_ADDRINT, address, IARG_END);
+    RTN_InsertCall(rtn, IPOINT_BEFORE, AFUNPTR(function_count), IARG_ADDRINT, address, IARG_END);
+
 }
 
 void print_instruction_map(FILE* fp, bool group){
@@ -135,9 +135,9 @@ int main(int argc, char * argv[]){
 
     // register trace processing function
     if(KnobInstrumentFunction.Value())
-        TRACE_AddInstrumentFunction(TraceFunctions, 0);
+        RTN_AddInstrumentFunction(Routine, 0);
     else
-        TRACE_AddInstrumentFunction(TraceInstructions, 0);
+        TRACE_AddInstrumentFunction(Trace, 0);
 
     FILE *fp;
     if(KnobOutputFile.Value().empty())
