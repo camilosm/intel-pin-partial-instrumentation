@@ -13,11 +13,10 @@
 #include "instruction.h"
 #include "function.h"
 
-INSTLIB::FILTER filter_lib;
-INSTLIB::FILTER_RTN filter_rtn;
+INSTLIB::FILTER filter;
 
 KNOB<std::string> KnobOutputFile(KNOB_MODE_WRITEONCE, "pintool", "o", "", "output file name");
-KNOB<bool> KnobInstrumentFunction(KNOB_MODE_WRITEONCE, "pintool", "f", "", "instrument by function");
+KNOB<std::string> KnobInstrumentFunction(KNOB_MODE_WRITEONCE, "pintool", "f", "", "instrument by function");
 KNOB<bool> KnobOutputGroup(KNOB_MODE_WRITEONCE, "pintool", "g", "0", "group by function");
 KNOB<ADDRINT> KnobAddressSet(KNOB_MODE_APPEND, "pintool", "a", "0", "instructions address set");
 KNOB<bool> KnobFilterRange(KNOB_MODE_WRITEONCE, "pintool", "r", "0", "enable range of addresses filter");
@@ -27,7 +26,7 @@ KNOB<ADDRINT> KnobAddressEnd(KNOB_MODE_WRITEONCE, "pintool", "e", "0", "range fi
 std::set<ADDRINT> filter_addresses_set;
 
 std::map<ADDRINT, Instruction*> instruction_map;
-std::map<ADDRINT, Function*> function_map;
+std::map<std::string, Function*> function_map;
 
 VOID instruction_count(ADDRINT address){
     instruction_map[address]->count++;
@@ -38,8 +37,8 @@ VOID function_count(ADDRINT address){
 }
 
 // process program traces by instructions
-VOID Trace(TRACE trace, VOID* v){
-    if(!filter_lib.SelectTrace(trace))
+VOID TraceInstructions(TRACE trace, VOID* v){
+    if(!filter.SelectTrace(trace))
         return;
     // iterate over basic blocks in the trace
     for(BBL bbl = TRACE_BblHead(trace); BBL_Valid(bbl); bbl = BBL_Next(bbl)){
@@ -63,11 +62,12 @@ VOID Trace(TRACE trace, VOID* v){
 }
 
 // process program traces by functions
-VOID Routine(RTN rtn, VOID* v){
-    if(!filter_rtn.SelectRtn(rtn))
+VOID TraceFunctions(TRACE trace, VOID* v){
+    if(!filter.SelectTrace(trace))
         return;
     // get block head instruction
-    ADDRINT address = RTN_Address(rtn);
+    INS ins = BBL_InsHead(TRACE_BblHead(trace));
+    ADDRINT address = INS_Address(ins);
     bool set, in_set, range, in_range;
     set = KnobAddressSet.SetByUser();
     in_set = filter_addresses_set.count(address)>0;
@@ -75,11 +75,10 @@ VOID Routine(RTN rtn, VOID* v){
     in_range = (address >= KnobAddressStart.Value() && address <= KnobAddressEnd.Value());
     if((set && !in_set && !range && !in_range) || (!set && !in_set && range && !in_range) || (set && !in_set && range && !in_range))
         return;
-    std::string name = PIN_UndecorateSymbolName(RTN_Name(rtn), UNDECORATION_COMPLETE);
+    std::string name = PIN_UndecorateSymbolName(RTN_FindNameByAddress(address), UNDECORATION_COMPLETE);
     Function* function = new Function(address, name);
-    function_map.insert(std::make_pair(address, function));
-    RTN_InsertCall(rtn, IPOINT_BEFORE, AFUNPTR(function_count), IARG_ADDRINT, address, IARG_END);
-
+    function_map.insert(std::make_pair(name, function));
+    INS_InsertCall(ins, IPOINT_BEFORE, AFUNPTR(function_count), IARG_ADDRINT, address, IARG_END);
 }
 
 void print_instruction_map(FILE* fp, bool group){
@@ -116,10 +115,10 @@ void print_function_map(FILE* fp){
 // called when the application exits
 VOID Fini(INT32 code, VOID *v){
     FILE *fp = (FILE*)v;
-    if(KnobInstrumentFunction.Value())
-        print_function_map(fp);
-    else
+    if(KnobInstrumentFunction.Value().empty())
         print_instruction_map(fp, KnobOutputGroup.Value());
+    // else
+        // print_function_map(fp);
     if(fp != stdout)
         fclose(fp);
 }
@@ -135,10 +134,12 @@ int main(int argc, char * argv[]){
         return Usage();
 
     // register trace processing function
-    if(KnobInstrumentFunction.Value())
-        RTN_AddInstrumentFunction(Routine, 0);
+    if(KnobInstrumentFunction.Value().empty())
+        TRACE_AddInstrumentFunction(TraceInstructions, 0);
     else
-        TRACE_AddInstrumentFunction(Trace, 0);
+        TRACE_AddInstrumentFunction(TraceFunctions, 0);
+
+
 
     FILE *fp;
     if(KnobOutputFile.Value().empty())
@@ -156,7 +157,7 @@ int main(int argc, char * argv[]){
     // needed get more information about associated function names
     PIN_InitSymbols();
 
-    // filter_rtn.Activate();
+    filter.Activate();
 
     // start the program, never returns
     PIN_StartProgram();
