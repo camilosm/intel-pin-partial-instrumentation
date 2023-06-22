@@ -13,7 +13,8 @@
 #include "instruction.h"
 #include "function.h"
 
-INSTLIB::FILTER filter;
+INSTLIB::FILTER filter_lib;
+INSTLIB::FILTER_RTN filter_rtn;
 
 KNOB<std::string> KnobOutputFile(KNOB_MODE_WRITEONCE, "pintool", "o", "", "output file name");
 KNOB<bool> KnobInstrumentFunction(KNOB_MODE_WRITEONCE, "pintool", "f", "", "instrument by function");
@@ -38,7 +39,7 @@ VOID function_count(ADDRINT address){
 
 // process program traces by instructions
 VOID Trace(TRACE trace, VOID* v){
-    if(!filter.SelectTrace(trace))
+    if(!filter_lib.SelectTrace(trace))
         return;
     // iterate over basic blocks in the trace
     for(BBL bbl = TRACE_BblHead(trace); BBL_Valid(bbl); bbl = BBL_Next(bbl)){
@@ -63,7 +64,7 @@ VOID Trace(TRACE trace, VOID* v){
 
 // process program traces by functions
 VOID Routine(RTN rtn, VOID* v){
-    if(!filter.SelectRtn(rtn))
+    if(!filter_rtn.SelectRtn(rtn))
         return;
     // get block head instruction
     ADDRINT address = RTN_Address(rtn);
@@ -155,7 +156,8 @@ int main(int argc, char * argv[]){
     // needed get more information about associated function names
     PIN_InitSymbols();
 
-    filter.Activate();
+    filter_lib.Activate();
+    filter_rtn.Activate();
 
     // start the program, never returns
     PIN_StartProgram();
