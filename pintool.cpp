@@ -70,7 +70,9 @@ VOID Routine(RTN rtn, VOID* v){
     std::string name = PIN_UndecorateSymbolName(RTN_Name(rtn), UNDECORATION_COMPLETE);
     function_map.insert(std::make_pair(name, 0));
     UINT64* pointer = &function_map[name];
+    RTN_Open(rtn);
     RTN_InsertCall(rtn, IPOINT_BEFORE, AFUNPTR(function_count), IARG_PTR, pointer, IARG_END);
+    RTN_Close(rtn);
 }
 
 void print_instruction_map(FILE* fp, bool group){
