@@ -37,7 +37,7 @@ VOID instruction_count(ADDRINT address){
 // }
 
 VOID function_count(Function *function){
-    function->count++;
+    function->count+=2;
 }
 
 // process program traces by instructions
