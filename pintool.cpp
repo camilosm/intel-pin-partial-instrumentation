@@ -11,7 +11,6 @@
 #include "instlib.H"
 
 #include "instruction.h"
-#include "function.h"
 
 INSTLIB::FILTER filter;
 
@@ -26,7 +25,7 @@ KNOB<ADDRINT> KnobAddressEnd(KNOB_MODE_WRITEONCE, "pintool", "e", "0", "range fi
 std::set<ADDRINT> filter_addresses_set;
 
 std::map<ADDRINT, Instruction*> instruction_map;
-std::map<std::string, Function*> function_map;
+std::map<std::string, UINT64> function_map;
 
 VOID instruction_count(ADDRINT address){
     instruction_map[address]->count++;
@@ -36,8 +35,8 @@ VOID instruction_count(ADDRINT address){
 //     function_map[name]->count++;
 // }
 
-VOID function_count(Function *function){
-    function->count+=2;
+VOID function_count(UINT64 *counter){
+    (*counter)++;
 }
 
 // process program traces by instructions
@@ -69,10 +68,10 @@ VOID TraceInstructions(TRACE trace, VOID* v){
 VOID Routine(RTN rtn, VOID* v){
     // get block head instruction
     std::string name = PIN_UndecorateSymbolName(RTN_Name(rtn), UNDECORATION_COMPLETE);
-    Function* function = new Function(name);
-    function_map.insert(std::make_pair(name, function));
+    function_map.insert(std::make_pair(name, 0));
+    UINT64* pointer = &function_map[name];
     RTN_Open(rtn);
-    RTN_InsertCall(rtn, IPOINT_BEFORE, AFUNPTR(function_count), IARG_PTR, function, IARG_END);
+    RTN_InsertCall(rtn, IPOINT_BEFORE, AFUNPTR(function_count), IARG_PTR, pointer, IARG_END);
     RTN_Close(rtn);
 }
 
@@ -102,7 +101,7 @@ void print_instruction_map(FILE* fp, bool group){
 
 void print_function_map(FILE* fp){
     for(auto pair : function_map){
-        fprintf(fp,"%s:%lu\n", pair.second->name.c_str(), pair.second->count);
+        fprintf(fp,"%s:%lu\n", pair.first.c_str(), pair.second);
     }
 }
 
