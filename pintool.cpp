@@ -136,8 +136,10 @@ int main(int argc, char * argv[]){
     // register trace processing function
     if(KnobInstrumentFunction.Value().empty())
         TRACE_AddInstrumentFunction(TraceInstructions, 0);
-    else
+    else{
         TRACE_AddInstrumentFunction(TraceFunctions, 0);
+        cout << "instrument by function" << endl;
+    }
 
     FILE *fp;
     if(KnobOutputFile.Value().empty())
