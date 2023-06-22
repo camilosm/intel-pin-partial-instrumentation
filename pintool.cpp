@@ -116,9 +116,9 @@ void print_function_map(FILE* fp){
 VOID Fini(INT32 code, VOID *v){
     FILE *fp = (FILE*)v;
     if(KnobInstrumentFunction.Value())
-        print_instruction_map(fp, KnobOutputGroup.Value());
-    else
         print_function_map(fp);
+    else
+        print_instruction_map(fp, KnobOutputGroup.Value());
     if(fp != stdout)
         fclose(fp);
 }
@@ -135,9 +135,9 @@ int main(int argc, char * argv[]){
 
     // register trace processing function
     if(KnobInstrumentFunction.Value())
-        TRACE_AddInstrumentFunction(TraceInstructions, 0);
-    else
         TRACE_AddInstrumentFunction(TraceFunctions, 0);
+    else
+        TRACE_AddInstrumentFunction(TraceInstructions, 0);
 
     FILE *fp;
     if(KnobOutputFile.Value().empty())
