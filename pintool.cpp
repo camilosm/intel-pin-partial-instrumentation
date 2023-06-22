@@ -32,8 +32,12 @@ VOID instruction_count(ADDRINT address){
     instruction_map[address]->count++;
 }
 
-VOID function_count(ADDRINT address){
-    function_map[address]->count++;
+// VOID function_count(std::string name){
+//     function_map[name]->count++;
+// }
+
+VOID function_count(UINT64 *counter){
+    (*counter)++;
 }
 
 // process program traces by instructions
@@ -78,7 +82,7 @@ VOID TraceFunctions(TRACE trace, VOID* v){
     std::string name = PIN_UndecorateSymbolName(RTN_FindNameByAddress(address), UNDECORATION_COMPLETE);
     Function* function = new Function(address, name);
     function_map.insert(std::make_pair(name, function));
-    INS_InsertCall(ins, IPOINT_BEFORE, AFUNPTR(function_count), IARG_ADDRINT, address, IARG_END);
+    INS_InsertCall(ins, IPOINT_BEFORE, AFUNPTR(function_count), IARG_PTR, &(function->count), IARG_END);
 }
 
 void print_instruction_map(FILE* fp, bool group){
