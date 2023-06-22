@@ -156,7 +156,7 @@ int main(int argc, char * argv[]){
     // needed get more information about associated function names
     PIN_InitSymbols();
 
-    filter_rtn.Activate();
+    // filter_rtn.Activate();
 
     // start the program, never returns
     PIN_StartProgram();
