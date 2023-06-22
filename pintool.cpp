@@ -16,7 +16,7 @@
 INSTLIB::FILTER filter;
 
 KNOB<std::string> KnobOutputFile(KNOB_MODE_WRITEONCE, "pintool", "o", "", "output file name");
-KNOB<bool> KnobInstrumentFunction(KNOB_MODE_WRITEONCE, "pintool", "f", "", "instrument by function");
+KNOB<bool> KnobInstrumentFunction(KNOB_MODE_WRITEONCE, "pintool", "f", "0", "instrument by function");
 KNOB<bool> KnobOutputGroup(KNOB_MODE_WRITEONCE, "pintool", "g", "0", "group by function");
 KNOB<ADDRINT> KnobAddressSet(KNOB_MODE_APPEND, "pintool", "a", "0", "instructions address set");
 KNOB<bool> KnobFilterRange(KNOB_MODE_WRITEONCE, "pintool", "r", "0", "enable range of addresses filter");
